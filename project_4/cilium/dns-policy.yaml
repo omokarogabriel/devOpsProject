@@ -1,0 +1,56 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: dns-egress-policy
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  egress:
+  # Allow access to AWS services
+  - toFQDNs:
+    - matchPattern: "*.amazonaws.com"
+  # Allow specific GitHub API
+  - toFQDNs:
+    - matchName: "api.github.com"
+  # Allow Google APIs
+  - toFQDNs:
+    - matchPattern: "*.googleapis.com"
+  # Allow internal DNS resolution
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*"
+  # Allow HTTPS to allowed domains
+  - toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cluster-dns-visibility
+spec:
+  endpointSelector: {}
+  egress:
+  # Log all DNS queries for visibility
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*"

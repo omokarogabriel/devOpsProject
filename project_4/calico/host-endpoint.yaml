@@ -1,0 +1,49 @@
+apiVersion: projectcalico.org/v3
+kind: HostEndpoint
+metadata:
+  name: worker-node-eth0
+  labels:
+    role: worker
+    environment: production
+spec:
+  interfaceName: eth0
+  node: worker-node-1
+  expectedIPs:
+  - 192.168.1.10
+  profiles:
+  - host-protection
+---
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: host-protection
+spec:
+  selector: role == "worker"
+  types:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow SSH from management network
+  - action: Allow
+    protocol: TCP
+    source:
+      nets:
+      - 10.0.0.0/24
+    destination:
+      ports:
+      - 22
+  # Allow Kubernetes API
+  - action: Allow
+    protocol: TCP
+    destination:
+      ports:
+      - 6443
+  # Allow kubelet
+  - action: Allow
+    protocol: TCP
+    destination:
+      ports:
+      - 10250
+  egress:
+  # Allow all outbound (adjust as needed)
+  - action: Allow

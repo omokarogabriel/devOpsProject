@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: calico-demo
+  labels:
+    app: backend
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+    tier: backend
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http

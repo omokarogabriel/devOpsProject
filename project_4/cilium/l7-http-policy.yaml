@@ -1,0 +1,70 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: l7-http-api-policy
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: frontend
+  egress:
+  # Allow specific HTTP methods and paths to backend
+  - toEndpoints:
+    - matchLabels:
+        app: backend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        # Allow GET requests to /api/* endpoints
+        - method: "GET"
+          path: "/api/.*"
+        # Allow POST to create users
+        - method: "POST"
+          path: "/api/users"
+        # Allow PUT to update users
+        - method: "PUT"
+          path: "/api/users/[0-9]+"
+        # Block DELETE (not explicitly allowed)
+  # Allow DNS
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*"
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backend-database-policy
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  egress:
+  # Allow backend to access database
+  - toEndpoints:
+    - matchLabels:
+        app: database
+    toPorts:
+    - ports:
+      - port: "5432"
+        protocol: TCP
+  # Allow DNS
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP

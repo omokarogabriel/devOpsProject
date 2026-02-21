@@ -1,0 +1,62 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grpc-policy
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: grpc-client
+  egress:
+  # Allow specific gRPC methods
+  - toEndpoints:
+    - matchLabels:
+        app: grpc-server
+    toPorts:
+    - ports:
+      - port: "50051"
+        protocol: TCP
+      rules:
+        # L7 gRPC rules
+        http:
+        # Allow GetUser method
+        - method: "POST"
+          path: "/user.UserService/GetUser"
+        # Allow ListUsers method
+        - method: "POST"
+          path: "/user.UserService/ListUsers"
+        # Block DeleteUser (not listed)
+        headers:
+        - "content-type: application/grpc"
+  # Allow DNS
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grpc-server-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: grpc-server
+  ingress:
+  # Only allow from authorized clients
+  - fromEndpoints:
+    - matchLabels:
+        app: grpc-client
+    toPorts:
+    - ports:
+      - port: "50051"
+        protocol: TCP
+      rules:
+        http:
+        - method: "POST"
+          path: "/user.UserService/.*"

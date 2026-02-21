@@ -1,0 +1,27 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: global-egress-control
+spec:
+  # Apply to all pods except kube-system
+  selector: projectcalico.org/namespace != "kube-system"
+  types:
+  - Egress
+  egress:
+  # Allow DNS to kube-system
+  - action: Allow
+    protocol: UDP
+    destination:
+      selector: k8s-app == "kube-dns"
+      namespaceSelector: projectcalico.org/name == "kube-system"
+      ports:
+      - 53
+  # Allow internal cluster communication
+  - action: Allow
+    destination:
+      nets:
+      - 10.244.0.0/16  # Pod CIDR (adjust for your cluster)
+      - 10.96.0.0/12   # Service CIDR (adjust for your cluster)
+  # Log and deny all other egress
+  - action: Log
+  - action: Deny

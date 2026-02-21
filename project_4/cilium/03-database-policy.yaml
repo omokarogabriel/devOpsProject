@@ -1,0 +1,31 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: database-policy
+  namespace: cilium-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      tier: database
+  ingress:
+  # Allow only from backend
+  - fromEndpoints:
+    - matchLabels:
+        tier: backend
+    toPorts:
+    - ports:
+      - port: "6379"
+        protocol: TCP
+  egress:
+  # Allow DNS only
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*"

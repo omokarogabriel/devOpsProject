@@ -1,0 +1,29 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: global-deny-egress
+spec:
+  # Apply to all pods in cluster
+  selector: all()
+  types:
+  - Egress
+  egress:
+  # Allow DNS
+  - action: Allow
+    protocol: UDP
+    destination:
+      ports:
+      - 53
+  # Allow Kubernetes API server
+  - action: Allow
+    protocol: TCP
+    destination:
+      nets:
+      - 10.96.0.1/32  # Kubernetes service IP
+      ports:
+      - 443
+  # Allow internal cluster communication
+  - action: Allow
+    destination:
+      nets:
+      - 10.244.0.0/16  # Pod CIDR (adjust for your cluster)

@@ -1,0 +1,43 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backend-policy
+  namespace: cilium-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      tier: backend
+  ingress:
+  # Allow only from frontend with L7 HTTP rules
+  - fromEndpoints:
+    - matchLabels:
+        tier: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+        - method: "POST"
+  egress:
+  # Allow to database
+  - toEndpoints:
+    - matchLabels:
+        tier: database
+    toPorts:
+    - ports:
+      - port: "6379"
+        protocol: TCP
+  # Allow DNS
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*"
