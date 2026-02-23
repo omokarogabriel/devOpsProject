@@ -59,6 +59,23 @@ Advanced Kubernetes networking demonstrating zero-trust security principles with
 
 ---
 
+### [Project 4 — Advanced CNI Comparison: Calico vs Cilium](./project_4/)
+**Focus:** CNI plugins, L7 policies, eBPF, advanced networking
+
+A comprehensive comparison of Calico and Cilium CNI plugins demonstrating their unique capabilities, advanced features, and production-ready implementations.
+
+**Key Features:**
+- **Calico Implementation:** GlobalNetworkPolicy, BGP, host endpoint protection, WireGuard encryption
+- **Cilium Implementation:** L7 HTTP policies, eBPF-native networking, Hubble observability
+- Side-by-side comparison with identical 3-tier applications
+- Production best practices (security hardening, resource management)
+- **Complete setup guides:** [Calico Setup Guide](./project_4/calico/SETUP_GUIDE.md) | [Cilium Setup Guide](./project_4/cilium/SETUP_GUIDE.md)
+- Performance and feature comparison documentation
+
+**Technologies:** Calico, Cilium, eBPF, BGP, WireGuard, Hubble
+
+---
+
 ## 🛠️ Technical Skills Demonstrated
 
 - **Container Orchestration:** Deployments, StatefulSets, Services, Ingress
@@ -67,6 +84,7 @@ Advanced Kubernetes networking demonstrating zero-trust security principles with
 - **Resource Management:** ResourceQuotas, LimitRanges, requests/limits
 - **Operations:** Rolling updates, rollbacks, zero-downtime deployments
 - **Networking:** ClusterIP, NodePort, Ingress controllers, NetworkPolicies, service discovery
+- **Advanced Networking:** CNI plugins (Calico, Cilium), L7 policies, eBPF, BGP
 - **Infrastructure as Code:** Declarative YAML manifests, GitOps-ready
 
 ## 🚀 Quick Start
@@ -92,6 +110,13 @@ kubectl apply -f project_2/k8s/
 # Project 3 — Network Policy
 kubectl apply -f project_3/namespace.yaml
 kubectl apply -f project_3/
+
+# Project 4 — CNI Comparison
+# Calico: See project_4/calico/SETUP_GUIDE.md for complete installation
+cd project_4/calico && ./deploy.sh
+
+# Cilium: See project_4/cilium/SETUP_GUIDE.md for complete installation
+cd project_4/cilium && ./deploy.sh
 ```
 
 Detailed instructions, architecture diagrams, and troubleshooting guides are available in each project's README.
@@ -136,6 +161,28 @@ devOps_project1/
     ├── database-deployment.yaml
     ├── database-service.yaml
     └── database-policy.yaml
+└── project_4/                   # Advanced CNI comparison
+    ├── README.md
+    ├── COMPARISON.md
+    ├── calico/
+    │   ├── README.md
+    │   ├── SETUP_GUIDE.md
+    │   ├── deploy.sh
+    │   ├── namespace.yaml
+    │   ├── *-deployment.yaml
+    │   ├── *-service.yaml
+    │   ├── *-policy.yaml
+    │   └── global-network-policy.yaml
+    └── cilium/
+        ├── README.md
+        ├── SETUP_GUIDE.md
+        ├── deploy.sh
+        ├── namespace.yaml
+        ├── *-deployment.yaml
+        ├── *-service.yaml
+        ├── l7-http-policy.yaml
+        ├── dns-policy.yaml
+        └── grpc-policy.yaml
 ```
 
 ## 🎓 Learning Outcomes
@@ -148,6 +195,7 @@ Through these projects, I've gained practical experience in:
 4. **Managing resources efficiently** — Quotas, limits, and capacity planning
 5. **Operating production workloads** — Monitoring readiness, safe deployments, quick rollbacks
 6. **Network security** — Traffic segmentation, ingress/egress control, label-based policies
+7. **Advanced networking** — CNI plugin comparison, L7 policies, eBPF performance optimization
 
 ## 🔧 Tools & Technologies
 
@@ -155,6 +203,8 @@ Through these projects, I've gained practical experience in:
 |----------|-------------|
 | **Orchestration** | Kubernetes, kubectl |
 | **Networking** | Ingress-Nginx, NetworkPolicy, ClusterIP, NodePort |
+| **CNI Plugins** | Calico, Cilium |
+| **Advanced Networking** | eBPF, BGP, WireGuard, Hubble |
 | **Security** | cert-manager, Let's Encrypt, TLS/SSL, Zero-Trust |
 | **Databases** | PostgreSQL (StatefulSet), Redis |
 | **Web Servers** | Nginx |
@@ -162,6 +212,7 @@ Through these projects, I've gained practical experience in:
 
 ## 📈 Future Enhancements
 
+- [x] Advanced CNI comparison (Calico vs Cilium)
 - [ ] CI/CD pipeline integration (GitHub Actions, Jenkins, ArgoCD)
 - [ ] Monitoring stack (Prometheus, Grafana)
 - [ ] Centralized logging (ELK/EFK stack)
@@ -180,6 +231,8 @@ Through these projects, I've gained practical experience in:
 ✅ Zero-downtime deployments — Rolling updates with proper strategies  
 ✅ Security hardening — TLS encryption, secrets management, network policies  
 ✅ Zero-trust networking — Default deny with explicit allow rules  
+✅ L7 policies — Application-layer traffic control (HTTP/gRPC)  
+✅ eBPF optimization — High-performance networking  
 ✅ Documentation — Comprehensive READMEs with examples  
 ✅ Namespace isolation — Logical separation of environments  
 

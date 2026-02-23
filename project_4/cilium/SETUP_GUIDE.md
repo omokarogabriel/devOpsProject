@@ -364,6 +364,124 @@ cilium hubble ui
 
 ## Advanced Features
 
+### L7 HTTP Path-Based Policies
+
+```bash
+# Create path-based L7 policy
+kubectl apply -f - <<EOF
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-path-policy
+  namespace: cilium-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+          path: "/api/v1/.*"    # Only /api/v1/* paths
+        - method: "POST"
+          path: "/api/v1/users"  # Specific endpoint
+        - method: "GET"
+          path: "/health"        # Health check
+EOF
+
+# Test allowed paths
+kubectl exec -n cilium-demo deployment/frontend -- wget -qO- http://backend/api/v1/data
+# Expected: Success
+
+# Test blocked paths
+kubectl exec -n cilium-demo deployment/frontend -- wget -qO- http://backend/api/v2/data
+# Expected: Blocked
+```
+
+### L7 gRPC Policies
+
+```bash
+# Create gRPC service policy
+kubectl apply -f - <<EOF
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grpc-policy
+  namespace: cilium-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      app: grpc-service
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: grpc-client
+    toPorts:
+    - ports:
+      - port: "50051"
+        protocol: TCP
+      rules:
+        l7proto: grpc
+        l7:
+        - method: "mypackage.MyService/GetUser"    # Allow specific method
+        - method: "mypackage.MyService/ListUsers"  # Allow list method
+EOF
+```
+
+### DNS-Based Egress Policies
+
+```bash
+# Allow specific external domains
+kubectl apply -f - <<EOF
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: dns-egress-policy
+  namespace: cilium-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      app: frontend
+  egress:
+  # Allow DNS
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      rules:
+        dns:
+        - matchPattern: "*.github.com"      # Allow GitHub
+        - matchPattern: "api.example.com"   # Allow specific API
+  # Allow HTTPS to matched domains
+  - toFQDNs:
+    - matchPattern: "*.github.com"
+    - matchName: "api.example.com"
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+EOF
+
+# Test allowed domain
+kubectl exec -n cilium-demo deployment/frontend -- wget -qO- https://api.github.com
+# Expected: Success
+
+# Test blocked domain
+kubectl exec -n cilium-demo deployment/frontend -- timeout 3 wget -qO- https://google.com || echo "✓ Blocked"
+# Expected: Timeout
+```
+
 ### Enable WireGuard Encryption
 
 ```bash
@@ -374,6 +492,22 @@ cilium config set enable-wireguard true
 cilium status | grep Encryption
 
 # Check WireGuard status
+cilium encrypt status
+
+# View WireGuard interfaces
+kubectl exec -n kube-system ds/cilium -- wg show
+```
+
+### Enable IPsec Encryption (Alternative)
+
+```bash
+# Install with IPsec
+cilium install --set encryption.enabled=true --set encryption.type=ipsec
+
+# Verify IPsec
+cilium status | grep Encryption
+
+# Check IPsec status
 cilium encrypt status
 ```
 
@@ -400,6 +534,9 @@ spec:
     - peerAddress: 192.168.1.1/32
       peerASN: 64513
 EOF
+
+# Check BGP status
+cilium bgp peers
 ```
 
 ### Cluster Mesh (Multi-Cluster)
@@ -416,17 +553,153 @@ cilium clustermesh connect --context cluster1 --destination-context cluster2
 
 # Verify
 cilium clustermesh status --context cluster1
+
+# Create global service
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: global-service
+  annotations:
+    io.cilium/global-service: "true"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+  selector:
+    app: backend
+EOF
+```
+
+### Service Mesh (Ingress/Egress Gateway)
+
+```bash
+# Enable Ingress Controller
+cilium install --set ingressController.enabled=true
+
+# Create Ingress
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cilium-ingress
+  namespace: cilium-demo
+spec:
+  ingressClassName: cilium
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+EOF
+
+# Enable Egress Gateway
+cilium install --set egressGateway.enabled=true
+
+# Configure egress gateway
+kubectl apply -f - <<EOF
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: egress-gateway
+spec:
+  selectors:
+  - podSelector:
+      matchLabels:
+        app: frontend
+  destinationCIDRs:
+  - 0.0.0.0/0
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        egress-gateway: "true"
+EOF
+```
+
+### Host Firewall Policies
+
+```bash
+# Protect Kubernetes nodes
+kubectl apply -f - <<EOF
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: host-firewall
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+  ingress:
+  # Allow SSH
+  - fromCIDR:
+    - 10.0.0.0/8
+    toPorts:
+    - ports:
+      - port: "22"
+        protocol: TCP
+  # Allow Kubernetes API
+  - toPorts:
+    - ports:
+      - port: "6443"
+        protocol: TCP
+  # Allow kubelet
+  - toPorts:
+    - ports:
+      - port: "10250"
+        protocol: TCP
+EOF
 ```
 
 ### Prometheus Metrics
 
 ```bash
 # Enable metrics
-cilium config set prometheus-serve-addr :9090
+cilium config set prometheus-serve-addr :9962
 
 # Check metrics endpoint
-kubectl port-forward -n kube-system ds/cilium 9090:9090 &
-curl http://localhost:9090/metrics
+kubectl port-forward -n kube-system ds/cilium 9962:9962 &
+curl http://localhost:9962/metrics
+
+# Install Prometheus (optional)
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install prometheus prometheus-community/kube-prometheus-stack
+
+# Configure ServiceMonitor
+kubectl apply -f - <<EOF
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cilium-agent
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cilium
+  endpoints:
+  - port: prometheus
+    interval: 30s
+EOF
+```
+
+### Grafana Dashboards
+
+```bash
+# Import Cilium dashboards
+# Dashboard IDs:
+# - 16611: Cilium Metrics
+# - 16612: Cilium Operator
+# - 16613: Hubble
+
+# Access Grafana
+kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
+# Navigate to http://localhost:3000
+# Import dashboards from https://grafana.com/grafana/dashboards/
 ```
 
 ---
@@ -533,15 +806,23 @@ sudo rm /usr/local/bin/hubble
 ## Best Practices
 
 ✅ **Use L7 policies** for HTTP/gRPC services  
-✅ **Enable Hubble** for observability  
-✅ **Enable encryption** for sensitive workloads  
-✅ **Monitor with Prometheus** for production  
+✅ **Enable Hubble** for observability and troubleshooting  
+✅ **Enable encryption** (WireGuard/IPsec) for sensitive workloads  
+✅ **Monitor with Prometheus** and Grafana for production  
 ✅ **Use DNS policies** for external service control  
-✅ **Test policies** before production deployment  
-✅ **Keep Cilium updated** for security patches  
-✅ **Use resource limits** on Cilium pods  
-✅ **Enable audit logs** for compliance  
-✅ **Document policies** for team knowledge  
+✅ **Test policies** in staging before production deployment  
+✅ **Keep Cilium updated** for security patches and features  
+✅ **Use resource limits** on Cilium pods for stability  
+✅ **Enable audit logs** for compliance requirements  
+✅ **Document policies** for team knowledge sharing  
+✅ **Use ClusterwideNetworkPolicy** for global rules  
+✅ **Enable host firewall** for node-level protection  
+✅ **Use service mesh features** for advanced traffic management  
+✅ **Implement egress gateways** for controlled external access  
+✅ **Monitor eBPF map usage** to prevent exhaustion  
+✅ **Use identity-based policies** over IP-based when possible  
+✅ **Enable flow logs** for security auditing  
+✅ **Test connectivity** after policy changes  
 
 ---
 

@@ -55,17 +55,28 @@ project_4/
 
 ### Choose Your Path
 
-**Option 1: Calico**
+**Option 1: Calico Setup**
 ```bash
 cd project_4/calico
-# Follow calico/README.md
+# Follow the comprehensive setup guide
+cat SETUP_GUIDE.md
+# Or run automated deployment
+./deploy.sh
 ```
 
-**Option 2: Cilium**
+**Option 2: Cilium Setup**
 ```bash
 cd project_4/cilium
-# Follow cilium/README.md
+# Follow the comprehensive setup guide
+cat SETUP_GUIDE.md
+# Or run automated deployment
+./deploy.sh
 ```
+
+### Step-by-Step Guides Available
+
+- **[Calico Setup Guide](./calico/SETUP_GUIDE.md)** — Complete installation, configuration, and advanced features
+- **[Cilium Setup Guide](./cilium/SETUP_GUIDE.md)** — Complete installation, Hubble setup, and L7 policies
 
 ## 🎓 Learning Outcomes
 

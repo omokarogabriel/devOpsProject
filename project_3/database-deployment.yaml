@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: database
   namespace: project-3
@@ -7,6 +7,7 @@ metadata:
     app: database
     tier: database
 spec:
+  serviceName: database-service
   replicas: 1
   selector:
     matchLabels:
@@ -41,3 +42,14 @@ spec:
             port: 6379
           initialDelaySeconds: 5
           periodSeconds: 5
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
