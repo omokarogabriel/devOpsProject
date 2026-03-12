@@ -2,7 +2,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: dns-egress-policy
-  namespace: default
+  namespace: cilium-demo
 spec:
   endpointSelector:
     matchLabels:
@@ -39,6 +39,7 @@ apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:
   name: cluster-dns-visibility
+  namespace: cilium-demo
 spec:
   endpointSelector: {}
   egress:

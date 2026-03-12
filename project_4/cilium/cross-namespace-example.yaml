@@ -1,0 +1,44 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-cross-namespace
+  namespace: cilium-demo
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  ingress:
+  # Allow from production namespace
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: production
+        app: api-gateway
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+        - method: "POST"
+  
+  # Allow from monitoring namespace (Prometheus)
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: monitoring
+        app: prometheus
+    toPorts:
+    - ports:
+      - port: "9090"
+        protocol: TCP
+  
+  egress:
+  # Allow to external-api namespace
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: external-api
+        app: payment-service
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP

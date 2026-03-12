@@ -2,7 +2,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: l7-http-api-policy
-  namespace: default
+  namespace: cilium-demo
 spec:
   endpointSelector:
     matchLabels:
@@ -45,7 +45,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: backend-database-policy
-  namespace: default
+  namespace: cilium-demo
 spec:
   endpointSelector:
     matchLabels:

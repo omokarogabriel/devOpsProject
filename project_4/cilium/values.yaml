@@ -1,0 +1,60 @@
+# Cilium Helm Values
+# Install with: helm install cilium cilium/cilium -f values.yaml --namespace kube-system --version 1.19.0
+
+# Cluster Configuration
+cluster:
+  name: kind-cilium
+
+# IPAM Configuration
+ipam:
+  mode: kubernetes
+
+# Routing Configuration
+routingMode: tunnel
+tunnelProtocol: vxlan
+
+# Operator Configuration
+operator:
+  replicas: 1
+
+# Hubble Observability
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - port-distribution
+      - icmp
+
+# Optional Features (uncomment to enable)
+
+WireGuard Encryption
+encryption:
+  enabled: true
+  type: wireguard
+
+Prometheus Metrics
+prometheus:
+  enabled: true
+operator:
+  prometheus:
+    enabled: true
+
+BGP Control Plane
+bgpControlPlane:
+  enabled: true
+
+# Ingress Controller
+# ingressController:
+#   enabled: true
+
+# Egress Gateway
+# egressGateway:
+#   enabled: true

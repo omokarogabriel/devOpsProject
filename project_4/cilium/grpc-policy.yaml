@@ -2,7 +2,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: grpc-policy
-  namespace: default
+  namespace: cilium-demo
 spec:
   endpointSelector:
     matchLabels:
@@ -17,7 +17,6 @@ spec:
       - port: "50051"
         protocol: TCP
       rules:
-        # L7 gRPC rules
         http:
         # Allow GetUser method
         - method: "POST"
@@ -26,8 +25,6 @@ spec:
         - method: "POST"
           path: "/user.UserService/ListUsers"
         # Block DeleteUser (not listed)
-        headers:
-        - "content-type: application/grpc"
   # Allow DNS
   - toEndpoints:
     - matchLabels:
@@ -42,7 +39,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: grpc-server-ingress
-  namespace: default
+  namespace: cilium-demo
 spec:
   endpointSelector:
     matchLabels:

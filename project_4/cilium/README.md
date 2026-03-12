@@ -1,287 +1,254 @@
-# Cilium Advanced Implementation
+# Cilium CNI with L7 Policies
 
-**Focus:** L7 HTTP Policies, eBPF, Production Best Practices
+Production-ready Cilium CNI deployment with eBPF-native networking, L7 HTTP policies, and Hubble observability.
 
-A complete 3-tier application demonstrating Cilium's L7 policy capabilities with HTTP method/path filtering and production-grade security.
-
-## 🎯 Overview
-
-This implementation showcases:
-- Cilium L7 HTTP policies (method and path filtering)
-- eBPF-native networking
-- StatefulSet with persistent storage
-- Security hardening (non-root, read-only filesystem)
-- Resource quotas and limits
-- Zero-trust networking with application-layer control
-
-## ✨ Key Features
-
-- **3-Tier Architecture** — Frontend (Nginx) → Backend (API) → Database (Redis)
-- **L7 HTTP Policies** — Control traffic by HTTP method (GET, POST, DELETE)
-- **Zero-Trust Networking** — Default deny-all with explicit allow rules
-- **eBPF-Native** — Superior performance without iptables
-- **Security Hardening** — Non-root users, read-only filesystems, dropped capabilities
-- **Resource Management** — Quotas, limits, and requests
-- **Persistent Storage** — StatefulSet with PVC for database
-
-## 🏗️ Architecture
+## 📁 Project Structure
 
 ```
-┌──────────────────────────────────────────────────┐
-│         Cilium L7 Policy Enforcement             │
-├──────────────────────────────────────────────────┤
-│  Frontend (Nginx:8080)                           │
-│    ↓ [L7: GET, POST allowed]                     │
-│  Backend (http-echo:8080)                        │
-│    ↓ [L4: TCP 6379 allowed]                      │
-│  Database (Redis:6379 + PVC)                     │
-│    ↓ [DNS allowed on all tiers]                  │
-└──────────────────────────────────────────────────┘
+cilium/
+├── README.md                    # This file
+├── SETUP_GUIDE.md              # Complete installation guide
+├── values.yaml                  # Helm configuration
+├── helm-install.sh             # Automated installation script
+├── namespace.yaml              # Demo namespace
+├── frontend-deployment.yaml    # Frontend app
+├── frontend-service.yaml
+├── backend-deployment.yaml     # Backend API
+├── backend-service.yaml
+├── database-deployment.yaml    # Redis database
+├── database-service.yaml
+├── l7-http-policy.yaml        # L7 HTTP method policies
+└── dns-policy.yaml            # DNS egress policies
 ```
 
-## 📋 Prerequisites
+## 🚀 Quick Start
 
-- Kubernetes cluster (v1.23+)
-- Cilium CNI installed (or standard CNI - policies work with both)
-- `kubectl` CLI configured
-- (Optional) `cilium` CLI for advanced features
-
-## 🚀 Step-by-Step Deployment
-
-### Step 1: Create Namespace
+### 1. Install Cilium
 
 ```bash
-kubectl apply -f namespace.yaml
+# Using the installation script
+./helm-install.sh
 
-# Verify
-kubectl get namespace cilium-demo
+# Wait for Cilium to be ready
+kubectl rollout status daemonset/cilium -n kube-system --timeout=120s
+
+# Verify Cilium is running
+kubectl get pods -n kube-system | grep cilium
 ```
 
-### Step 2: Apply Resource Governance
+### 2. Deploy Demo Application
 
 ```bash
-kubectl apply -f resources.yaml
-
-# Verify
-kubectl describe resourcequota -n cilium-demo
-kubectl describe limitrange -n cilium-demo
-```
-
-### Step 3: Deploy Database Layer
-
-```bash
-# Create secret and service
-kubectl apply -f database.yaml
-
-# Deploy StatefulSet
-kubectl apply -f database-statefulset.yaml
-
-# Wait for database to be ready
-kubectl wait --for=condition=ready pod -l app=database -n cilium-demo --timeout=120s
-
-# Verify
-kubectl get statefulset -n cilium-demo
-kubectl get pvc -n cilium-demo
-```
-
-### Step 4: Deploy Backend Layer
-
-```bash
-kubectl apply -f backend-deployment.yaml
-kubectl apply -f backend-service.yaml
-
-# Wait for backend to be ready
-kubectl wait --for=condition=ready pod -l app=backend -n cilium-demo --timeout=120s
-
-# Verify
-kubectl get deployment backend -n cilium-demo
-```
-
-### Step 5: Deploy Frontend Layer
-
-```bash
-kubectl apply -f frontend-configmap.yaml
-kubectl apply -f frontend-deployment.yaml
-kubectl apply -f frontend-service.yaml
-
-# Wait for frontend to be ready
-kubectl wait --for=condition=ready pod -l app=frontend -n cilium-demo --timeout=120s
-
-# Verify
-kubectl get deployment frontend -n cilium-demo
-```
-
-### Step 6: Apply Cilium L7 Network Policies
-
-```bash
-# Apply in order
-kubectl apply -f 00-default-deny.yaml
-kubectl apply -f 01-frontend-policy.yaml
-kubectl apply -f 02-backend-policy.yaml
-kubectl apply -f 03-database-policy.yaml
-
-# Verify
-kubectl get ciliumnetworkpolicies -n cilium-demo
-kubectl describe ciliumnetworkpolicy frontend-policy -n cilium-demo
-```
-
-## 📋 Quick Deployment
-
-```bash
-# Automated deployment
+# Deploy all components
 ./deploy.sh
-
-# Or all at once
-kubectl apply -f namespace.yaml
-kubectl apply -f resources.yaml
-kubectl apply -f database.yaml,database-statefulset.yaml
-kubectl apply -f backend-deployment.yaml,backend-service.yaml
-kubectl apply -f frontend-configmap.yaml,frontend-deployment.yaml,frontend-service.yaml
-kubectl apply -f 00-default-deny.yaml,01-frontend-policy.yaml,02-backend-policy.yaml,03-database-policy.yaml
-
-# Wait for all pods
-kubectl wait --for=condition=ready pod --all -n cilium-demo --timeout=180s
 ```
 
-## 🔍 Validation & Testing
-
-### Check Deployment Status
+### 3. Access Hubble UI
 
 ```bash
-# View all resources
-kubectl get all -n cilium-demo
+# Port-forward Hubble UI
+kubectl port-forward -n kube-system svc/hubble-ui 12000:80
 
-# Check pod details
-kubectl get pods -n cilium-demo -o wide --show-labels
+# Open browser to http://localhost:12000
+```
 
-# Check Cilium network policies
+## 🔍 Key Features
+
+### eBPF-Native Networking
+- High-performance packet processing
+- Kernel-level network visibility
+- Minimal overhead compared to iptables
+
+### L7 HTTP Policies
+- Method-based access control (GET, POST, PUT, DELETE)
+- Path-based routing rules
+- Header inspection and filtering
+
+### Hubble Observability
+- Real-time traffic visualization
+- Service dependency mapping
+- Network policy troubleshooting
+
+### DNS-Based Egress Control
+- FQDN-based policies
+- Selective external access
+- DNS query monitoring
+
+## 📊 Architecture
+
+```
+┌─────────────┐
+│   Ingress   │
+└──────┬──────┘
+       │
+┌──────▼──────────┐
+│    Frontend     │  (Nginx)
+│  L7 Policy: ✓   │
+└──────┬──────────┘
+       │ HTTP GET/POST only
+┌──────▼──────────┐
+│     Backend     │  (HTTP Echo)
+│  L7 Policy: ✓   │
+└──────┬──────────┘
+       │ TCP 6379 only
+┌──────▼──────────┐
+│    Database     │  (Redis)
+│  L7 Policy: ✓   │
+└─────────────────┘
+```
+
+## 🧪 Testing L7 Policies
+
+### Test Allowed HTTP Methods
+
+```bash
+# GET request (allowed)
+kubectl exec -n cilium-demo deployment/frontend -- \
+  wget -qO- http://backend
+
+# POST request (allowed)
+kubectl exec -n cilium-demo deployment/frontend -- \
+  wget -qO- --post-data="test" http://backend
+```
+
+### Test Blocked HTTP Methods
+
+```bash
+# DELETE request (blocked)
+kubectl exec -n cilium-demo deployment/frontend -- \
+  wget -qO- --method=DELETE http://backend
+
+# PUT request (blocked)
+kubectl exec -n cilium-demo deployment/frontend -- \
+  wget -qO- --method=PUT http://backend
+```
+
+### Test Network Segmentation
+
+```bash
+# Frontend → Database (blocked)
+kubectl exec -n cilium-demo deployment/frontend -- \
+  timeout 3 wget -qO- http://database:6379 || echo "✓ Blocked"
+
+# Backend → Database (allowed)
+kubectl exec -n cilium-demo deployment/backend -- \
+  timeout 3 nc -zv database 6379
+```
+
+## 📈 Hubble Observability
+
+### Access Hubble UI
+
+```bash
+# Port-forward Hubble UI
+kubectl port-forward -n kube-system svc/hubble-ui 12000:80
+
+# Open browser to http://localhost:12000
+```
+
+### Features
+- Service map visualization
+- Real-time traffic flows
+- HTTP request/response inspection
+- DNS query monitoring
+- Policy enforcement visualization
+
+## 🛠️ Configuration
+
+### Customize Helm Values
+
+Edit `values.yaml` to enable/disable features:
+
+```yaml
+# Enable Hubble
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+
+# Enable encryption (optional)
+encryption:
+  enabled: true
+  type: wireguard
+
+# Enable metrics (optional)
+prometheus:
+  enabled: true
+```
+
+Apply changes:
+```bash
+helm upgrade cilium cilium/cilium \
+  --version 1.19.0 \
+  --namespace kube-system \
+  --values values.yaml
+```
+
+## 🔧 Troubleshooting
+
+### Check Cilium Status
+```bash
+kubectl get pods -n kube-system | grep cilium
+kubectl logs -n kube-system daemonset/cilium --tail=50
+```
+
+### Restart Cilium
+```bash
+kubectl rollout restart daemonset/cilium -n kube-system
+```
+
+### Check Network Policies
+```bash
 kubectl get ciliumnetworkpolicies -n cilium-demo
-
-# Check resource usage
-kubectl top pods -n cilium-demo
-```
-
-### Test L7 HTTP Policies
-
-```bash
-# Test 1: GET request (allowed by L7 policy)
-kubectl exec -n cilium-demo deployment/frontend -- wget -qO- http://backend
-# Expected: "Backend API - Cilium L7 Demo"
-
-# Test 2: POST request (allowed by L7 policy)
-kubectl exec -n cilium-demo deployment/frontend -- wget -qO- --post-data="test" http://backend
-# Expected: Success
-
-# Test 3: DELETE request (blocked by L7 policy)
-kubectl exec -n cilium-demo deployment/frontend -- wget -qO- --method=DELETE http://backend 2>&1 || echo "✓ Blocked by L7 policy"
-# Expected: Blocked (DELETE not in allowed methods)
-
-# Test 4: Frontend → Database (blocked by L4 policy)
-kubectl exec -n cilium-demo deployment/frontend -- timeout 3 wget -qO- http://database:6379 || echo "✓ Blocked by policy"
-# Expected: Timeout
-```
-
-### Verify Security Hardening
-
-```bash
-# Check pods are running as non-root
-kubectl exec -n cilium-demo deployment/frontend -- id
-# Expected: uid=101 (non-root)
-
-# Verify read-only filesystem
-kubectl exec -n cilium-demo deployment/frontend -- touch /test 2>&1
-# Expected: Read-only file system error
-```
-
-### Check Cilium-Specific Features (if Cilium CNI installed)
-
-```bash
-# Check Cilium status
-cilium status
-
-# View Cilium endpoints
-cilium endpoint list
-
-# Check policy enforcement
-cilium policy get
-
-# View network flows (if Hubble enabled)
-hubble observe --namespace cilium-demo
-
-# Filter by pod
-hubble observe --from-pod frontend --namespace cilium-demo
-
-# Filter by HTTP method
-hubble observe --http-method GET --namespace cilium-demo
+kubectl describe ciliumnetworkpolicy <policy-name> -n cilium-demo
 ```
 
 ## 🧹 Cleanup
 
 ```bash
-# Delete all resources
+# Remove demo application
 kubectl delete namespace cilium-demo
 
-# Verify cleanup
-kubectl get namespace cilium-demo
+# Uninstall Cilium
+helm uninstall cilium -n kube-system
 ```
 
-## 🎓 Best Practices Demonstrated
+## 🔄 Complete Reinstall
 
-✅ **L7 HTTP Policies** — Method-level access control (GET, POST allowed; DELETE blocked)  
-✅ **Zero-Trust Networking** — Default deny-all with explicit allow rules  
-✅ **Security Hardening** — Non-root users, read-only filesystems, dropped capabilities  
-✅ **Resource Management** — Quotas, limits, and requests on all pods  
-✅ **Persistent Storage** — StatefulSet with PVC for stateful workloads  
-✅ **Health Checks** — Liveness and readiness probes for all containers  
-✅ **Secrets Management** — Kubernetes secrets for sensitive data  
-✅ **eBPF-Native** — Superior performance without iptables overhead  
-✅ **Rolling Updates** — Zero-downtime deployment strategy  
-✅ **DNS Policies** — DNS-aware traffic control  
+```bash
+# 1. Install Cilium with Helm (includes Hubble UI)
+./helm-install.sh
 
-## 📊 L7 Policy Highlights
+# 2. Wait for Cilium to be ready
+kubectl rollout status daemonset/cilium -n kube-system --timeout=120s
 
-### HTTP Method Filtering
-```yaml
-rules:
-  http:
-  - method: "GET"     # ✅ Allowed
-  - method: "POST"    # ✅ Allowed
-  # DELETE not listed  # ❌ Blocked
+# 3. Verify Cilium is running
+kubectl get pods -n kube-system | grep cilium
+
+# 4. Deploy demo application
+./deploy.sh
+
+# 5. Access Hubble UI
+kubectl port-forward -n kube-system svc/hubble-ui 12000:80
+# Open browser to http://localhost:12000
 ```
 
-### Path-Based Filtering (Example)
-```yaml
-rules:
-  http:
-  - method: "GET"
-    path: "/api/.*"    # Only /api/* paths
-  - method: "POST"
-    path: "/api/users" # Specific endpoint
-```
+## 📚 Documentation
 
-### Traffic Flow with L7
-```
-Frontend → Backend
-  GET /     ✅ Allowed (L7 rule)
-  POST /    ✅ Allowed (L7 rule)
-  DELETE /  ❌ Blocked (not in L7 rules)
-  
-Frontend → Database
-  TCP 6379  ❌ Blocked (no L4 rule)
-```
+- [Complete Setup Guide](./SETUP_GUIDE.md) - Detailed installation and configuration
+- [Cilium Official Docs](https://docs.cilium.io/)
+- [Hubble Documentation](https://docs.cilium.io/en/stable/observability/hubble/)
 
-## 🔗 Resources
+## 🎯 Use Cases
 
-- [Cilium Documentation](https://docs.cilium.io/)
-- [L7 Policy Examples](https://docs.cilium.io/en/stable/security/policy/language/#layer-7-examples)
-- [Hubble Observability](https://docs.cilium.io/en/stable/observability/hubble/)
-- [eBPF Introduction](https://ebpf.io/)
+- **Zero-trust networking** - Default deny with explicit allow rules
+- **API security** - L7 HTTP method and path-based policies
+- **Compliance** - Network traffic auditing and monitoring
+- **Microservices** - Service-to-service communication control
+- **Multi-tenancy** - Namespace-level network isolation
 
-## 💡 Key Takeaways
+---
 
-This implementation demonstrates:
-- **Application-layer security** — Control traffic by HTTP method and path
-- **eBPF performance** — Native kernel networking without iptables
-- **Production-ready** — Security hardening, resource limits, health checks
-- **Zero-trust** — Default deny with explicit L7 allow rules
-- **Observability-ready** — Compatible with Hubble for network visibility
+**Built with ❤️ for production-ready Kubernetes networking**
