@@ -94,3 +94,7 @@ yarn-error.log*
 # Ignore generated manifests
 generated/
 output/
+
+# Binary downloads
+*.tar.gz
+*.tar.gz.sha256sum
