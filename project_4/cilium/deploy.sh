@@ -11,6 +11,7 @@ sleep 2
 
 # Step 2: Deploy Application Components
 echo "🌐 Step 2/4: Deploying application components..."
+kubectl apply -f frontend-configmap.yaml
 kubectl apply -f frontend-deployment.yaml
 kubectl apply -f frontend-service.yaml
 kubectl apply -f backend-deployment.yaml

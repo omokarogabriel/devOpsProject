@@ -1,5 +1,10 @@
 # Cilium Helm Values
 # Install with: helm install cilium cilium/cilium -f values.yaml --namespace kube-system --version 1.19.0
+#
+# NOTE: BGP Control Plane is disabled by default. It requires physical/virtual
+# routers to peer with and will block agent startup on kind/minikube clusters
+# because the operator cannot register BGP CRDs without a BGP-capable environment.
+# Enable only on bare-metal or cloud clusters with BGP support.
 
 # Cluster Configuration
 cluster:
@@ -16,6 +21,8 @@ tunnelProtocol: vxlan
 # Operator Configuration
 operator:
   replicas: 1
+  prometheus:
+    enabled: true
 
 # Hubble Observability
 hubble:
@@ -33,23 +40,19 @@ hubble:
       - port-distribution
       - icmp
 
-# Optional Features (uncomment to enable)
-
-WireGuard Encryption
+# WireGuard Encryption
 encryption:
   enabled: true
   type: wireguard
 
-Prometheus Metrics
+# Prometheus Metrics
 prometheus:
   enabled: true
-operator:
-  prometheus:
-    enabled: true
 
-BGP Control Plane
-bgpControlPlane:
-  enabled: true
+# BGP Control Plane (requires physical/virtual routers to peer with)
+# Uncomment for bare-metal or cloud environments with BGP support
+# bgpControlPlane:
+#   enabled: true
 
 # Ingress Controller
 # ingressController:
