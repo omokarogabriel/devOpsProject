@@ -76,6 +76,23 @@ A comprehensive comparison of Calico and Cilium CNI plugins demonstrating their 
 
 ---
 
+### [Project 5 — HPA, PDB & Karpenter Autoscaling](./project_5/)
+**Focus:** Horizontal Pod Autoscaling, Pod Disruption Budgets, Karpenter node autoscaling
+
+A production-grade 3-tier application with pod-level and node-level autoscaling, disruption protection, and AWS Karpenter integration.
+
+**Key Features:**
+- HPA with CPU/memory metrics and scale-up/down policies
+- PDB on all tiers guaranteeing minimum availability
+- Karpenter NodePool with spot + on-demand instances
+- EC2NodeClass with instance type selection and consolidation
+- Security hardening (non-root, read-only filesystem)
+- Zero-downtime rolling updates
+
+**Technologies:** Kubernetes HPA, PDB, Karpenter, AWS EKS, Redis
+
+---
+
 ## 🛠️ Technical Skills Demonstrated
 
 - **Container Orchestration:** Deployments, StatefulSets, Services, Ingress
@@ -85,6 +102,8 @@ A comprehensive comparison of Calico and Cilium CNI plugins demonstrating their 
 - **Operations:** Rolling updates, rollbacks, zero-downtime deployments
 - **Networking:** ClusterIP, NodePort, Ingress controllers, NetworkPolicies, service discovery
 - **Advanced Networking:** CNI plugins (Calico, Cilium), L7 policies, eBPF, BGP
+- **Autoscaling:** HPA, Karpenter, NodePools, EC2NodeClass
+- **Disruption Management:** PodDisruptionBudgets, consolidation policies
 - **Infrastructure as Code:** Declarative YAML manifests, GitOps-ready
 
 ## 🚀 Quick Start
@@ -117,6 +136,9 @@ cd project_4/calico && ./deploy.sh
 
 # Cilium: See project_4/cilium/SETUP_GUIDE.md for complete installation
 cd project_4/cilium && ./deploy.sh
+
+# Project 5 — HPA, PDB & Karpenter
+cd project_5 && ./deploy.sh
 ```
 
 Detailed instructions, architecture diagrams, and troubleshooting guides are available in each project's README.
@@ -161,7 +183,7 @@ devOps_project1/
     ├── database-deployment.yaml
     ├── database-service.yaml
     └── database-policy.yaml
-└── project_4/                   # Advanced CNI comparison
+├── project_4/                   # Advanced CNI comparison
     ├── README.md
     ├── COMPARISON.md
     ├── calico/
@@ -183,6 +205,23 @@ devOps_project1/
         ├── l7-http-policy.yaml
         ├── dns-policy.yaml
         └── grpc-policy.yaml
+└── project_5/                   # HPA, PDB & Karpenter
+    ├── README.md
+    ├── deploy.sh
+    ├── namespace.yaml
+    ├── frontend-deployment.yaml
+    ├── frontend-service.yaml
+    ├── backend-deployment.yaml
+    ├── backend-service.yaml
+    ├── database-statefulset.yaml
+    ├── database-service.yaml
+    ├── configmap.yaml
+    ├── database-secret.yaml
+    ├── resourcequota.yaml
+    ├── limitrange.yaml
+    ├── hpa.yaml
+    ├── pdb.yaml
+    └── karpenter.yaml
 ```
 
 ## 🎓 Learning Outcomes
@@ -208,11 +247,13 @@ Through these projects, I've gained practical experience in:
 | **Security** | cert-manager, Let's Encrypt, TLS/SSL, Zero-Trust |
 | **Databases** | PostgreSQL (StatefulSet), Redis |
 | **Web Servers** | Nginx |
+| **Autoscaling** | HPA, Karpenter, NodePools |
 | **IaC** | YAML manifests, declarative configuration |
 
 ## 📈 Future Enhancements
 
 - [x] Advanced CNI comparison (Calico vs Cilium)
+- [x] HPA, PDB & Karpenter autoscaling
 - [ ] CI/CD pipeline integration (GitHub Actions, Jenkins, ArgoCD)
 - [ ] Monitoring stack (Prometheus, Grafana)
 - [ ] Centralized logging (ELK/EFK stack)
@@ -235,6 +276,9 @@ Through these projects, I've gained practical experience in:
 ✅ eBPF optimization — High-performance networking  
 ✅ Documentation — Comprehensive READMEs with examples  
 ✅ Namespace isolation — Logical separation of environments  
+✅ Pod autoscaling — HPA with CPU/memory metrics  
+✅ Node autoscaling — Karpenter with spot + on-demand  
+✅ Disruption budgets — PDB for safe maintenance  
 
 ## 📝 Notes
 

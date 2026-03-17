@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: project-5
+data:
+  BACKEND_URL: "http://backend:80"
+  REDIS_HOST: "database-0.database.project-5.svc.cluster.local"
+  REDIS_PORT: "6379"

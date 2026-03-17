@@ -1,0 +1,35 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: project-5
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend-pdb
+  namespace: project-5
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: backend
+      tier: backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: database-pdb
+  namespace: project-5
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: database
+      tier: database
